@@ -10,6 +10,11 @@ pub trait Tokenizable: ToTokens {
     fn value_token_stream(&self) -> TokenStream;
 
     fn from_value(value: Self::ValueType) -> Self;
+
+    fn convert_token_stream(
+        arguments: Option<&AngleBracketedGenericArguments>,
+        value_path: &TokenStream
+    ) -> Result<TokenStream, Error>;
 }
 
 pub struct TokenizableVec<T: ToTokens>(pub Vec<T>);
@@ -32,41 +37,41 @@ impl<T: ToTokens> Tokenizable for TokenizableVec<T> {
     fn from_value(value: Self::ValueType) -> Self {
         TokenizableVec(value)
     }
-}
 
-pub fn vec_convert_token_stream(
-    arguments: Option<&AngleBracketedGenericArguments>,
-    value_path: &TokenStream
-) -> Result<TokenStream, Error> {
-    if arguments.is_none() {
-        return Err(Error::new(
-            Span::call_site(),
-            "Vec must have one generic param at least."
-        ))
-    }
-    let nested_type = arguments.unwrap().args.iter().filter_map(
-        |arg| {
-            match arg {
-                GenericArgument::Type(ty) => Some(ty),
-                _ => None
-            }
+    fn convert_token_stream(
+        arguments: Option<&AngleBracketedGenericArguments>,
+        value_path: &TokenStream
+    ) -> Result<TokenStream, Error> {
+        if arguments.is_none() {
+            return Err(Error::new(
+                Span::call_site(),
+                "Vec must have one generic param at least."
+            ))
         }
-    ).find(|_| true).ok_or_else(
-        || Error::new_spanned(
-            &arguments.unwrap(),
-            "Vec must have one generic param at least."
-        )
-    )?;
+        let nested_type = arguments.unwrap().args.iter().filter_map(
+            |arg| {
+                match arg {
+                    GenericArgument::Type(ty) => Some(ty),
+                    _ => None
+                }
+            }
+        ).find(|_| true).ok_or_else(
+            || Error::new_spanned(
+                &arguments.unwrap(),
+                "Vec must have one generic param at least."
+            )
+        )?;
 
-    let wrapped_value = get_wrapped_value(nested_type, quote::quote! {
+        let wrapped_value = get_wrapped_value(nested_type, quote::quote! {
             item
         }, false, true)?;
-    let wrapped_type = get_wrapper(nested_type);
-    Ok(quote::quote! {
+        let wrapped_type = get_wrapper(nested_type);
+        Ok(quote::quote! {
         iroha::TokenizableVec::from_value(#value_path.iter().map(
             |item| #wrapped_value
         ).collect::<Vec<#wrapped_type>>())
     })
+    }
 }
 
 impl<T: ToTokens> ToTokens for TokenizableVec<T> {
@@ -101,18 +106,18 @@ impl Tokenizable for TokenizableString {
     fn from_value(value: Self::ValueType) -> Self {
         TokenizableString(value)
     }
-}
 
-pub fn string_convert_token_stream(
-    arguments: Option<&AngleBracketedGenericArguments>,
-    value_path: &TokenStream
-) -> Result<TokenStream, Error> {
-    if arguments.is_some() {
-        return Err(Error::new_spanned(arguments.unwrap(), "String do not support generic"))
-    }
-    Ok(quote::quote! {
+    fn convert_token_stream(
+        arguments: Option<&AngleBracketedGenericArguments>,
+        value_path: &TokenStream
+    ) -> Result<TokenStream, Error> {
+        if let Some(args) = arguments {
+            return Err(Error::new_spanned(args, "String do not support generic"))
+        }
+        Ok(quote::quote! {
         iroha::TokenizableString::from_value(#value_path.clone())
     })
+    }
 }
 
 impl ToTokens for TokenizableString {

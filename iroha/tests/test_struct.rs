@@ -8,6 +8,7 @@ struct TestUnit;
 struct TestTuple(i32, i64, Vec<u8>);
 
 #[derive(ToTokens)]
+#[Iroha(mod_path="test")]
 struct TestStruct {
     a: i32,
     b: i64,
@@ -46,6 +47,6 @@ fn test_struct() {
     };
     assert_eq!(
         get_result(&st),
-        "{TestStruct::new(0i32,0i64,{vec![1i64,2i64,3i64]},{String::from(\"23333\")},{vec![{String::from(\"a\")},{String::from(\"b\")},{String::from(\"c\")}]})}"
+        "{test::TestStruct::new(0i32,0i64,{vec![1i64,2i64,3i64]},{String::from(\"23333\")},{vec![{String::from(\"a\")},{String::from(\"b\")},{String::from(\"c\")}]})}"
     );
 }

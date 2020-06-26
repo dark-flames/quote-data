@@ -1,16 +1,7 @@
-use proc_macro2::{TokenStream, Punct, Spacing, Span};
+use proc_macro2::TokenStream;
 use syn::{DeriveInput, Error, Data, Fields, Field as SynField, Ident, Type, Index};
 use iroha_internal::get_wrapped_value;
-use quote::{ToTokens, TokenStreamExt};
-
-pub struct Interpolated(String);
-
-impl ToTokens for Interpolated {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        tokens.append(Punct::new('#', Spacing::Alone));
-        tokens.append(Ident::new(self.0.as_str(), Span::call_site()));
-    }
-}
+use super::helper::Interpolated;
 
 enum StructType {
     NoField,
@@ -31,7 +22,7 @@ impl StructType {
 #[allow(dead_code)]
 pub struct StructStructure {
     name: Ident,
-    fields: Option<Vec<Field>>,
+    fields: Option<Vec<StructField>>,
     mod_path: Option<TokenStream>,
     struct_type: StructType
 }
@@ -49,8 +40,8 @@ impl StructStructure {
             None
         } else {
             Some(data_struct.fields.iter().enumerate().map(
-                |(index, field)| Field::from_ast(field, index)
-            ).collect::<Result<Vec<Field>, Error>>()?)
+                |(index, field)| StructField::from_ast(field, index)
+            ).collect::<Result<Vec<StructField>, Error>>()?)
         };
 
         let struct_type = match &data_struct.fields {
@@ -100,7 +91,7 @@ impl StructStructure {
 
         let mod_path_token = self.mod_path.as_ref().map(
             |path| quote::quote! {#path::}
-        ).unwrap_or(TokenStream::new());
+        ).unwrap_or_default();
 
         Ok(quote::quote! {
             impl #name {
@@ -127,18 +118,18 @@ impl StructStructure {
 }
 
 #[allow(dead_code)]
-struct Field {
+struct StructField {
     name: Option<Ident>,
     index: usize,
     ty: Type
 }
 
-impl Field {
+impl StructField {
     pub fn from_ast(field: &SynField, index: usize) -> Result<Self, Error> {
         let name = field.ident.clone();
         let ty = field.ty.clone();
 
-        Ok(Field {
+        Ok(StructField {
             name,
             index,
             ty

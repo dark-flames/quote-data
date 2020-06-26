@@ -1,5 +1,16 @@
 use std::fmt::{self, Display};
 use syn::{Ident, Path};
+use quote::{ToTokens, TokenStreamExt};
+use proc_macro2::{TokenStream, Punct, Spacing, Span};
+
+pub struct Interpolated(pub String);
+
+impl ToTokens for Interpolated {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        tokens.append(Punct::new('#', Spacing::Alone));
+        tokens.append(Ident::new(self.0.as_str(), Span::call_site()));
+    }
+}
 
 #[derive(Copy, Clone)]
 pub struct Symbol(&'static str);

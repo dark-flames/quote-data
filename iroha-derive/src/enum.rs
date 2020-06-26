@@ -87,7 +87,7 @@ impl Variant {
 
         let mod_path_token = mod_path.as_ref().map(
             |path| quote! {#path::}
-        ).unwrap_or(TokenStream::new());
+        ).unwrap_or_default();
 
         quote! {
             #enum_ident::#name#arguments_tokens => quote::quote! {

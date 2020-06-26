@@ -31,8 +31,8 @@ pub fn get_wrapped_value(ty: &Type, value_path: TokenStream, as_ref: bool, clone
         let last_segment = type_path.path.segments.iter().rev().next().unwrap();
         let args = assert_angle_args(&last_segment.arguments)?;
         match last_segment.ident.to_string().as_str() {
-            "Vec" => vec_convert_token_stream(args, &value_path),
-            "String" => string_convert_token_stream(args, &value_path),
+            "Vec" => TokenizableVec::<String>::convert_token_stream(args, &value_path),
+            "String" => TokenizableString::convert_token_stream(args, &value_path),
             _ => Ok(quote::quote! {
                 #ref_token#value_path#clone_token
             })
@@ -59,5 +59,5 @@ pub fn get_wrapper(ty: &Type) -> TokenStream {
         }
     } else {
         None
-    }.unwrap_or(ty.to_token_stream())
+    }.unwrap_or_else(|| ty.to_token_stream())
 }

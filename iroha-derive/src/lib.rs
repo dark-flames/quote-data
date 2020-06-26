@@ -70,11 +70,10 @@ pub fn derive_to_tokens(input: TokenStream) -> TokenStream {
         }
     }
 
-    if mod_path_tokens.is_err() {
-        return TokenStream::from(mod_path_tokens.unwrap_err().to_compile_error())
-    }
-
-    let mod_path_tokens = mod_path_tokens.unwrap();
+    let mod_path_tokens = match mod_path_tokens {
+        Ok(result) => result,
+        Err(e) => return TokenStream::from(e.to_compile_error())
+    };
 
     let result = match &input.data {
         Data::Enum(_) => EnumStructure::from_ast(&input, mod_path_tokens).map(
