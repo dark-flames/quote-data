@@ -1,9 +1,10 @@
-mod ty;
 mod helper;
 mod r#enum;
 mod r#struct;
 
+
 use r#enum::EnumStructure;
+use r#struct::StructStructure;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use syn::{parse_macro_input, DeriveInput, Data, Error, Meta, NestedMeta, Lit};
@@ -79,10 +80,11 @@ pub fn derive_to_tokens(input: TokenStream) -> TokenStream {
         Data::Enum(_) => EnumStructure::from_ast(&input, mod_path_tokens).map(
             |s| s.get_implement()
         ),
+        Data::Struct(_) => StructStructure::from_ast(&input, mod_path_tokens).map(
+            |s| s.get_implement()
+        ),
         _ => Err(Error::new_spanned(&input, "Unknown data type"))
     };
-
-    //panic!(result.unwrap().to_string());
 
     TokenStream::from(match result {
         Ok(tokens) => tokens,

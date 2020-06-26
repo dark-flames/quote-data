@@ -1,5 +1,5 @@
 use iroha::ToTokens;
-use quote::{quote, ToTokens};
+use quote::ToTokens;
 
 #[derive(ToTokens)]
 #[Iroha(mod_path="test")]
@@ -17,7 +17,7 @@ enum Test2 {
 }
 
 fn get_string<T: ToTokens>(value: T) -> String {
-    let tokens = quote! {
+    let tokens = quote::quote! {
         #value
     };
 
@@ -34,6 +34,7 @@ pub fn test_enum_with_path() {
     assert_eq!(c, "{test::Test::C}");
 }
 
+#[test]
 pub fn test_enum() {
     let a = get_string(Test2::A);
     assert_eq!(a, "{Test2::A}");
