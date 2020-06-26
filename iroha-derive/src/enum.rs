@@ -28,13 +28,13 @@ impl EnumStructure {
         })
     }
 
-    pub fn get_implement(&self) -> TokenStream {
+    pub fn get_implement(&self) -> Result<TokenStream, Error> {
         let name = &self.name;
         let variants: Vec<TokenStream> = self.variants.iter().map(
             |variant| variant.arm_token_stream(&self.name, &self.mod_path)
         ).collect();
 
-        quote! {
+        Ok(quote! {
             impl quote::ToTokens for #name {
                 fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
                     use quote::TokenStreamExt;
@@ -46,7 +46,7 @@ impl EnumStructure {
                     ))
                 }
             }
-        }
+        })
     }
 }
 

@@ -87,7 +87,8 @@ pub fn derive_to_tokens(input: TokenStream) -> TokenStream {
     };
 
     TokenStream::from(match result {
-        Ok(tokens) => tokens,
+        Ok(Ok(tokens)) => tokens,
+        Ok(Err(e)) => e.to_compile_error(),
         Err(e) => e.to_compile_error()
     })
 }

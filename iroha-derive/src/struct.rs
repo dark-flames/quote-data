@@ -67,7 +67,7 @@ impl StructStructure {
         })
     }
 
-    pub fn get_implement(self) -> TokenStream {
+    pub fn get_implement(self) -> Result<TokenStream, Error> {
         let name = &self.name;
         let (
             field_idents,
@@ -83,7 +83,7 @@ impl StructStructure {
                     ).collect::<Vec<TokenStream>>(),
                     fields_vec.iter().map(
                         |field| field.temp_value_token_stream()
-                    ).collect::<Vec<TokenStream>>()
+                    ).collect::<Result<Vec<TokenStream>, Error>>()?
                 ),
             _ => (Vec::new(), Vec::new(), Vec::new())
         };
@@ -101,7 +101,8 @@ impl StructStructure {
         let mod_path_token = self.mod_path.as_ref().map(
             |path| quote::quote! {#path::}
         ).unwrap_or(TokenStream::new());
-        quote::quote! {
+
+        Ok(quote::quote! {
             impl #name {
                 pub fn new(#(#fn_new_params),*) -> Self {
                     #name #params
@@ -121,7 +122,7 @@ impl StructStructure {
                     ))
                 }
             }
-        }
+        })
     }
 }
 
@@ -174,11 +175,11 @@ impl Field {
         }
     }
 
-    pub fn temp_value_token_stream(&self) -> TokenStream {
+    pub fn temp_value_token_stream(&self) -> Result<TokenStream, Error> {
         let temp_value_ident = self.get_temp_value_ident();
-        let value = get_wrapped_value(&self.ty, self.get_ident());
-        quote::quote! {
+        let value = get_wrapped_value(&self.ty, self.get_ident(), true, false)?;
+        Ok(quote::quote! {
             let #temp_value_ident = #value
-        }
+        })
     }
 }
