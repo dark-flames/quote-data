@@ -1,19 +1,13 @@
+mod helper;
 pub mod ty;
+pub use helper::TokenizableError;
 
-use syn::{Type, Error, PathArguments, AngleBracketedGenericArguments};
+use syn::{Type, Error};
 use proc_macro2::TokenStream;
 use ty::*;
 use syn::export::ToTokens;
+use helper::assert_angle_args;
 
-fn assert_angle_args(arguments: &PathArguments) -> Result<Option<&AngleBracketedGenericArguments>, Error> {
-    match arguments {
-        PathArguments::None => Ok(None),
-        PathArguments::AngleBracketed(result) => Ok(Some(result)),
-        _ => Err(Error::new_spanned(
-            arguments, "Path argument must be angle bracketed args"
-        ))
-    }
-}
 
 pub fn get_wrapped_value(ty: &Type, value_path: TokenStream, as_ref: bool, clone: bool) -> Result<TokenStream, Error> {
     let ref_token = if as_ref {
@@ -34,6 +28,7 @@ pub fn get_wrapped_value(ty: &Type, value_path: TokenStream, as_ref: bool, clone
             "Vec" => TokenizableVec::<String>::convert_token_stream(args, &value_path),
             "String" => TokenizableString::convert_token_stream(args, &value_path),
             "Option" => TokenizableOption::<String>::convert_token_stream(args, &value_path),
+            "Result" => TokenizableResult::<String, TokenizableError>::convert_token_stream(args, &value_path),
             _ => Ok(quote::quote! {
                 #ref_token#value_path#clone_token
             })
@@ -52,6 +47,7 @@ pub fn get_wrapper(ty: &Type) -> TokenStream {
         match last_segment.ident.to_string().as_str() {
             "Vec" => Some(TokenizableVec::<String>::type_name(arguments)),
             "String" => Some(TokenizableString::type_name(arguments)),
+            "Result" =>Some(TokenizableResult::<String, TokenizableError>::type_name(arguments)),
             "Option" => Some(TokenizableOption::<String>::type_name(arguments)),
             _ => None
         }

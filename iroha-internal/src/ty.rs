@@ -176,7 +176,7 @@ impl <T: ToTokens + Clone> Tokenizable for TokenizableOption<T> {
                     _ => None
                 }
             }
-        ).find(|_| true).ok_or_else(
+        ).next().ok_or_else(
             || Error::new_spanned(
                 &arguments.unwrap(),
                 "Option must have one generic param at least."
@@ -193,6 +193,93 @@ impl <T: ToTokens + Clone> Tokenizable for TokenizableOption<T> {
 }
 
 impl<T: ToTokens + Clone> ToTokens for TokenizableOption<T> {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let value = self.value_token_stream();
+        tokens.append(proc_macro2::Group::new(
+            proc_macro2::Delimiter::Brace,
+            quote::quote! {
+                #value
+            }
+        ))
+    }
+}
+
+pub struct TokenizableResult<
+    T: ToTokens + Clone,
+    E: ToTokens + Clone + std::error::Error
+>(pub Result<T, E>);
+
+impl <
+    T: ToTokens + Clone,
+    E: ToTokens + Clone + std::error::Error
+> Tokenizable for TokenizableResult<T, E> {
+    type ValueType = Result<T, E>;
+
+    fn type_name(argument: &PathArguments) -> TokenStream {
+        quote::quote! {
+            iroha::TokenizableResult#argument
+        }
+    }
+
+    fn value_token_stream(&self) -> TokenStream {
+        match &self.0 {
+            Ok(v) => quote::quote! {
+                Ok(#v)
+            },
+            Err(e) => quote::quote! {
+                Err(#e)
+            }
+        }
+    }
+
+    fn from_value(value: Self::ValueType) -> Self {
+        TokenizableResult(value)
+    }
+
+    fn convert_token_stream(arguments: Option<&AngleBracketedGenericArguments>, value_path: &TokenStream) -> Result<TokenStream, Error> {
+        let mut nested_types = arguments.unwrap().args.iter().filter_map(
+            |arg| {
+                match arg {
+                    GenericArgument::Type(ty) => Some(ty),
+                    _ => None
+                }
+            }
+        );
+
+        let first_param = nested_types.next().ok_or_else(
+            || Error::new_spanned(arguments.unwrap(), "Result must have two generic params.")
+        )?;
+
+        let second_param = nested_types.next().ok_or_else(
+            || Error::new_spanned(arguments.unwrap(), "Result must have two generic params.")
+        )?;
+
+        let first_wrapped_value = get_wrapped_value(
+            first_param, quote::quote! {
+                result
+            }, false, true
+        )?;
+
+        let second_wrapped_value = get_wrapped_value(
+            second_param, quote::quote! {
+                error
+            }, false, true
+        )?;
+
+        Ok(quote::quote! {
+            iroha::TokenizableResult::from_value(
+                #value_path.clone()
+                .map(|result| #first_wrapped_value)
+                .map_err(|error| #second_wrapped_value)
+            )
+        })
+    }
+}
+
+impl<
+    T: ToTokens + Clone,
+    E: ToTokens + Clone + std::error::Error
+> ToTokens for TokenizableResult<T, E> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let value = self.value_token_stream();
         tokens.append(proc_macro2::Group::new(

@@ -85,7 +85,6 @@ pub fn derive_to_tokens(input: TokenStream) -> TokenStream {
         _ => Err(Error::new_spanned(&input, "Unknown data type"))
     };
 
-
     TokenStream::from(match result {
         Ok(Ok(tokens)) => tokens,
         Ok(Err(e)) => e.to_compile_error(),

@@ -1,4 +1,5 @@
 use iroha::ToTokens;
+use iroha_internal::TokenizableError;
 use quote::ToTokens;
 
 #[derive(ToTokens)]
@@ -16,6 +17,7 @@ struct TestStruct {
     vec_string: Vec<String>,
     option_string: Option<String>,
     option_string_none: Option<String>,
+    result: Result<String, TokenizableError>
 }
 
 fn get_result<T: ToTokens>(value: T) -> String {
@@ -46,9 +48,10 @@ fn test_struct() {
         vec_string: vec!["yuikino".to_string(), "yui".to_string(), "iroha".to_string()],
         option_string: Some("iroha".to_string()),
         option_string_none: None,
+        result: Ok("233".to_string()),
     };
     assert_eq!(
         get_result(&st),
-        "{test::TestStruct::new(0i32,{vec![1i64,2i64,3i64]},{\"iroha\".to_string()},{vec![{\"yuikino\".to_string()},{\"yui\".to_string()},{\"iroha\".to_string()}]},{Some({\"iroha\".to_string()})},{None})}"
+        "{test::TestStruct::new(0i32,{vec![1i64,2i64,3i64]},{\"iroha\".to_string()},{vec![{\"yuikino\".to_string()},{\"yui\".to_string()},{\"iroha\".to_string()}]},{Some({\"iroha\".to_string()})},{None},{Ok({\"233\".to_string()})})}"
     );
 }
