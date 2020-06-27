@@ -8,13 +8,14 @@ struct TestUnit;
 struct TestTuple(i32, i64, Vec<u8>);
 
 #[derive(ToTokens)]
-#[Iroha(mod_path="test")]
+#[Iroha(mod_path = "test")]
 struct TestStruct {
-    a: i32,
-    b: i64,
-    c: Vec<i64>,
-    d: String,
-    e: Vec<String>,
+    basic: i32,
+    vec: Vec<i64>,
+    string: String,
+    vec_string: Vec<String>,
+    option_string: Option<String>,
+    option_string_none: Option<String>,
 }
 
 fn get_result<T: ToTokens>(value: T) -> String {
@@ -39,14 +40,15 @@ fn test_unit() {
 #[test]
 fn test_struct() {
     let st = TestStruct {
-        a: 0,
-        b: 0,
-        c: vec![1, 2, 3],
-        d: String::from("23333"),
-        e: vec![String::from("a"), String::from("b"), String::from("c")],
+        basic: 0,
+        vec: vec![1, 2, 3],
+        string: "iroha".to_string(),
+        vec_string: vec!["yuikino".to_string(), "yui".to_string(), "iroha".to_string()],
+        option_string: Some("iroha".to_string()),
+        option_string_none: None,
     };
     assert_eq!(
         get_result(&st),
-        "{test::TestStruct::new(0i32,0i64,{vec![1i64,2i64,3i64]},{String::from(\"23333\")},{vec![{String::from(\"a\")},{String::from(\"b\")},{String::from(\"c\")}]})}"
+        "{test::TestStruct::new(0i32,{vec![1i64,2i64,3i64]},{\"iroha\".to_string()},{vec![{\"yuikino\".to_string()},{\"yui\".to_string()},{\"iroha\".to_string()}]},{Some({\"iroha\".to_string()})},{None})}"
     );
 }

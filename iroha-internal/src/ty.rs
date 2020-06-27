@@ -1,11 +1,12 @@
 use proc_macro2::{TokenStream, Span};
 use quote::{ToTokens, TokenStreamExt};
-use syn::{AngleBracketedGenericArguments, GenericArgument, Error};
+use syn::{AngleBracketedGenericArguments, GenericArgument, Error, PathArguments};
 use crate::{get_wrapped_value, get_wrapper};
+use std::clone::Clone;
 
 pub trait Tokenizable: ToTokens {
     type ValueType;
-    fn type_name(&self) -> TokenStream;
+    fn type_name(argument: &PathArguments) -> TokenStream;
 
     fn value_token_stream(&self) -> TokenStream;
 
@@ -17,13 +18,14 @@ pub trait Tokenizable: ToTokens {
     ) -> Result<TokenStream, Error>;
 }
 
-pub struct TokenizableVec<T: ToTokens>(pub Vec<T>);
+#[derive(Clone)]
+pub struct TokenizableVec<T: ToTokens + Clone>(pub Vec<T>);
 
-impl<T: ToTokens> Tokenizable for TokenizableVec<T> {
+impl<T: ToTokens + Clone> Tokenizable for TokenizableVec<T> {
     type ValueType = Vec<T>;
-    fn type_name(&self) -> TokenStream {
+    fn type_name(argument: &PathArguments) -> TokenStream {
         quote::quote! {
-            iroha::TokenizableVec
+            iroha::TokenizableVec#argument
         }
     }
 
@@ -67,14 +69,14 @@ impl<T: ToTokens> Tokenizable for TokenizableVec<T> {
         }, false, true)?;
         let wrapped_type = get_wrapper(nested_type);
         Ok(quote::quote! {
-        iroha::TokenizableVec::from_value(#value_path.iter().map(
-            |item| #wrapped_value
-        ).collect::<Vec<#wrapped_type>>())
-    })
+            iroha::TokenizableVec::from_value(#value_path.iter().map(
+                |item| #wrapped_value
+            ).collect::<Vec<#wrapped_type>>())
+        })
     }
 }
 
-impl<T: ToTokens> ToTokens for TokenizableVec<T> {
+impl<T: ToTokens + Clone> ToTokens for TokenizableVec<T> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let value = self.value_token_stream();
         tokens.append(proc_macro2::Group::new(
@@ -86,11 +88,12 @@ impl<T: ToTokens> ToTokens for TokenizableVec<T> {
     }
 }
 
+#[derive(Clone)]
 pub struct TokenizableString(pub String);
 
 impl Tokenizable for TokenizableString {
     type ValueType = String;
-    fn type_name(&self) -> TokenStream {
+    fn type_name(_argument: &PathArguments) -> TokenStream {
         quote::quote! {
             iroha::TokenizableString
         }
@@ -99,7 +102,7 @@ impl Tokenizable for TokenizableString {
     fn value_token_stream(&self) -> TokenStream {
         let value = &self.0;
         quote::quote! {
-            String::from(#value)
+            #value.to_string()
         }
     }
 
@@ -115,12 +118,81 @@ impl Tokenizable for TokenizableString {
             return Err(Error::new_spanned(args, "String do not support generic"))
         }
         Ok(quote::quote! {
-        iroha::TokenizableString::from_value(#value_path.clone())
-    })
+            iroha::TokenizableString::from_value(#value_path.clone())
+        })
     }
 }
 
 impl ToTokens for TokenizableString {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let value = self.value_token_stream();
+        tokens.append(proc_macro2::Group::new(
+            proc_macro2::Delimiter::Brace,
+            quote::quote! {
+                #value
+            }
+        ))
+    }
+}
+
+#[derive(Clone)]
+pub struct TokenizableOption<T: ToTokens + Clone>(pub Option<T>);
+
+impl <T: ToTokens + Clone> Tokenizable for TokenizableOption<T> {
+    type ValueType = Option<T>;
+
+    fn type_name(argument: &PathArguments) -> TokenStream {
+        quote::quote! {
+            iroha::TokenizableOption#argument
+        }
+    }
+
+    fn value_token_stream(&self) -> TokenStream {
+        match &self.0 {
+            Some(nested) => quote::quote! {
+                Some(#nested)
+            },
+            None => quote::quote! {
+                None
+            }
+        }
+    }
+
+    fn from_value(value: Self::ValueType) -> Self {
+        TokenizableOption(value)
+    }
+
+    fn convert_token_stream(arguments: Option<&AngleBracketedGenericArguments>, value_path: &TokenStream) -> Result<TokenStream, Error> {
+        if arguments.is_none() {
+            return Err(Error::new(
+                Span::call_site(),
+                "Option must have one generic param at least."
+            ))
+        }
+        let nested_type = arguments.unwrap().args.iter().filter_map(
+            |arg| {
+                match arg {
+                    GenericArgument::Type(ty) => Some(ty),
+                    _ => None
+                }
+            }
+        ).find(|_| true).ok_or_else(
+            || Error::new_spanned(
+                &arguments.unwrap(),
+                "Option must have one generic param at least."
+            )
+        )?;
+
+        let wrapped_value = get_wrapped_value(nested_type, quote::quote! {
+            option_value
+        }, false, true)?;
+        Ok(quote::quote! {
+            iroha::TokenizableOption::from_value(#value_path.as_ref().map(|option_value| #wrapped_value))
+        })
+    }
+}
+
+impl<T: ToTokens + Clone> ToTokens for TokenizableOption<T> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let value = self.value_token_stream();
         tokens.append(proc_macro2::Group::new(

@@ -33,6 +33,7 @@ pub fn get_wrapped_value(ty: &Type, value_path: TokenStream, as_ref: bool, clone
         match last_segment.ident.to_string().as_str() {
             "Vec" => TokenizableVec::<String>::convert_token_stream(args, &value_path),
             "String" => TokenizableString::convert_token_stream(args, &value_path),
+            "Option" => TokenizableOption::<String>::convert_token_stream(args, &value_path),
             _ => Ok(quote::quote! {
                 #ref_token#value_path#clone_token
             })
@@ -49,12 +50,9 @@ pub fn get_wrapper(ty: &Type) -> TokenStream {
         let last_segment = type_path.path.segments.iter().rev().next().unwrap();
         let arguments = &last_segment.arguments;
         match last_segment.ident.to_string().as_str() {
-            "Vec" => Some(quote::quote! {
-                iroha::TokenizableVec#arguments
-            }),
-            "String" => Some(quote::quote! {
-                iroha::TokenizableString
-            }),
+            "Vec" => Some(TokenizableVec::<String>::type_name(arguments)),
+            "String" => Some(TokenizableString::type_name(arguments)),
+            "Option" => Some(TokenizableOption::<String>::type_name(arguments)),
             _ => None
         }
     } else {
