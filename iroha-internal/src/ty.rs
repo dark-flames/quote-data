@@ -1,8 +1,11 @@
-use proc_macro2::{TokenStream, Span};
+use proc_macro2::TokenStream;
 use quote::{ToTokens, TokenStreamExt};
-use syn::{AngleBracketedGenericArguments, GenericArgument, Error, PathArguments};
+use syn::{AngleBracketedGenericArguments, Error, PathArguments};
 use crate::{get_wrapped_value, get_wrapper};
 use std::clone::Clone;
+use std::collections::HashMap;
+use std::hash::Hash;
+use crate::helper::get_nested_types;
 
 pub trait Tokenizable: ToTokens {
     type ValueType;
@@ -44,20 +47,8 @@ impl<T: ToTokens + Clone> Tokenizable for TokenizableVec<T> {
         arguments: Option<&AngleBracketedGenericArguments>,
         value_path: &TokenStream
     ) -> Result<TokenStream, Error> {
-        if arguments.is_none() {
-            return Err(Error::new(
-                Span::call_site(),
-                "Vec must have one generic param at least."
-            ))
-        }
-        let nested_type = arguments.unwrap().args.iter().filter_map(
-            |arg| {
-                match arg {
-                    GenericArgument::Type(ty) => Some(ty),
-                    _ => None
-                }
-            }
-        ).find(|_| true).ok_or_else(
+        let nested_types = get_nested_types(arguments);
+        let nested_type = nested_types.first().ok_or_else(
             || Error::new_spanned(
                 &arguments.unwrap(),
                 "Vec must have one generic param at least."
@@ -163,20 +154,8 @@ impl <T: ToTokens + Clone> Tokenizable for TokenizableOption<T> {
     }
 
     fn convert_token_stream(arguments: Option<&AngleBracketedGenericArguments>, value_path: &TokenStream) -> Result<TokenStream, Error> {
-        if arguments.is_none() {
-            return Err(Error::new(
-                Span::call_site(),
-                "Option must have one generic param at least."
-            ))
-        }
-        let nested_type = arguments.unwrap().args.iter().filter_map(
-            |arg| {
-                match arg {
-                    GenericArgument::Type(ty) => Some(ty),
-                    _ => None
-                }
-            }
-        ).next().ok_or_else(
+        let nested_type = get_nested_types(arguments);
+        let nested_type = nested_type.first().ok_or_else(
             || Error::new_spanned(
                 &arguments.unwrap(),
                 "Option must have one generic param at least."
@@ -237,20 +216,13 @@ impl <
     }
 
     fn convert_token_stream(arguments: Option<&AngleBracketedGenericArguments>, value_path: &TokenStream) -> Result<TokenStream, Error> {
-        let mut nested_types = arguments.unwrap().args.iter().filter_map(
-            |arg| {
-                match arg {
-                    GenericArgument::Type(ty) => Some(ty),
-                    _ => None
-                }
-            }
-        );
+        let nested_types = get_nested_types(arguments);
 
-        let first_param = nested_types.next().ok_or_else(
+        let first_param = nested_types.get(0).ok_or_else(
             || Error::new_spanned(arguments.unwrap(), "Result must have two generic params.")
         )?;
 
-        let second_param = nested_types.next().ok_or_else(
+        let second_param = nested_types.get(1).ok_or_else(
             || Error::new_spanned(arguments.unwrap(), "Result must have two generic params.")
         )?;
 
@@ -280,6 +252,88 @@ impl<
     T: ToTokens + Clone,
     E: ToTokens + Clone + std::error::Error
 > ToTokens for TokenizableResult<T, E> {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let value = self.value_token_stream();
+        tokens.append(proc_macro2::Group::new(
+            proc_macro2::Delimiter::Brace,
+            quote::quote! {
+                #value
+            }
+        ))
+    }
+}
+
+pub struct TokenizableHashMap<
+    K: Eq + Hash + Clone + ToTokens,
+    V: Clone + ToTokens
+>(pub HashMap<K, V>);
+
+impl<K, V> Tokenizable for TokenizableHashMap<K, V>
+    where
+        K: Eq + Hash + Clone + ToTokens,
+        V: Clone + ToTokens
+{
+    type ValueType = Vec<(K, V)>;
+
+    fn type_name(argument: &PathArguments) -> TokenStream {
+        quote::quote! {
+            iroha::TokenizableHashMap#argument
+        }
+    }
+
+    fn value_token_stream(&self) -> TokenStream {
+        let pairs: Vec<TokenStream> = self.0.iter().map(
+            |(key, value)| quote::quote! {
+                (#key, #value)
+            }
+        ).collect();
+
+        quote::quote! {
+            vec![#(#pairs),*].into_iter().collect()
+        }
+    }
+
+    fn from_value(value: Self::ValueType) -> Self {
+        TokenizableHashMap(value.into_iter().collect())
+    }
+
+    fn convert_token_stream(arguments: Option<&AngleBracketedGenericArguments>, value_path: &TokenStream) -> Result<TokenStream, Error> {
+        let nested_types = get_nested_types(arguments);
+
+        let first_param = nested_types.get(0).ok_or_else(
+            || Error::new_spanned(arguments.unwrap(), "Result must have two generic params.")
+        )?;
+
+        let second_param = nested_types.get(1).ok_or_else(
+            || Error::new_spanned(arguments.unwrap(), "Result must have two generic params.")
+        )?;
+
+        let first_wrapped_value = get_wrapped_value(
+            first_param, quote::quote! {
+                key
+            }, false, true
+        )?;
+
+        let second_wrapped_value = get_wrapped_value(
+            second_param, quote::quote! {
+                value
+            }, false, true
+        )?;
+
+        Ok(quote::quote! {
+            iroha::TokenizableHashMap::from_value(
+                #value_path.iter().map(
+                    |(key, value)| (#first_wrapped_value, #second_wrapped_value)
+                ).collect()
+            )
+        })
+    }
+}
+
+impl<
+    K: Eq + Hash + Clone + ToTokens,
+    V: Clone + ToTokens
+> ToTokens for TokenizableHashMap<K, V> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let value = self.value_token_stream();
         tokens.append(proc_macro2::Group::new(

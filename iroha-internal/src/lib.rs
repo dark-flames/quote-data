@@ -8,7 +8,6 @@ use ty::*;
 use syn::export::ToTokens;
 use helper::assert_angle_args;
 
-
 pub fn get_wrapped_value(ty: &Type, value_path: TokenStream, as_ref: bool, clone: bool) -> Result<TokenStream, Error> {
     let ref_token = if as_ref {
         quote::quote! {&}
@@ -26,6 +25,7 @@ pub fn get_wrapped_value(ty: &Type, value_path: TokenStream, as_ref: bool, clone
         let args = assert_angle_args(&last_segment.arguments)?;
         match last_segment.ident.to_string().as_str() {
             "Vec" => TokenizableVec::<String>::convert_token_stream(args, &value_path),
+            "HashMap" => TokenizableHashMap::<String, String>::convert_token_stream(args, &value_path),
             "String" => TokenizableString::convert_token_stream(args, &value_path),
             "Option" => TokenizableOption::<String>::convert_token_stream(args, &value_path),
             "Result" => TokenizableResult::<String, TokenizableError>::convert_token_stream(args, &value_path),
@@ -46,6 +46,7 @@ pub fn get_wrapper(ty: &Type) -> TokenStream {
         let arguments = &last_segment.arguments;
         match last_segment.ident.to_string().as_str() {
             "Vec" => Some(TokenizableVec::<String>::type_name(arguments)),
+            "HashMap" => Some(TokenizableHashMap::<String, String>::type_name(arguments)),
             "String" => Some(TokenizableString::type_name(arguments)),
             "Result" =>Some(TokenizableResult::<String, TokenizableError>::type_name(arguments)),
             "Option" => Some(TokenizableOption::<String>::type_name(arguments)),

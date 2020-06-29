@@ -1,6 +1,6 @@
-use syn::{PathArguments, AngleBracketedGenericArguments, Error};
+use syn::{PathArguments, AngleBracketedGenericArguments, Error, Type, GenericArgument};
 use std::error::Error as StdError;
-use syn::export::fmt::{Display, Result as FmtResult, Formatter};
+use std::fmt::{Display, Result as FmtResult, Formatter};
 use quote::ToTokens;
 use proc_macro2::TokenStream;
 
@@ -11,6 +11,20 @@ pub fn assert_angle_args(arguments: &PathArguments) -> Result<Option<&AngleBrack
         _ => Err(Error::new_spanned(
             arguments, "Path argument must be angle bracketed args"
         ))
+    }
+}
+
+pub fn get_nested_types(arguments: Option<&AngleBracketedGenericArguments>) -> Vec<&Type> {
+    match arguments {
+        Some(args) => args.args.iter().filter_map(
+                |arg| {
+                    match arg {
+                        GenericArgument::Type(ty) => Some(ty),
+                        _ => None
+                    }
+                }
+            ).collect(),
+        None => Vec::new()
     }
 }
 
