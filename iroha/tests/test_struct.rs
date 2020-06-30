@@ -20,7 +20,8 @@ struct TestStruct {
     option_string_none: Option<String>,
     result: Result<String, TokenizableError>,
     map: HashMap<usize, String>,
-    hash_set: HashSet<String>
+    hash_set: HashSet<String>,
+    str: &'static str
 }
 
 fn get_result<T: ToTokens>(value: T) -> String {
@@ -53,8 +54,11 @@ fn test_struct() {
         option_string_none: None,
         result: Ok("233".to_string()),
         map: vec![(1, "yuikino".to_string()), (2, "yui".to_string())].into_iter().collect(),
-        hash_set: vec!["yuikino".to_string(), "yui".to_string(), "iroha".to_string()].into_iter().collect()
+        hash_set: vec!["yuikino".to_string(), "yui".to_string(), "iroha".to_string()].into_iter().collect(),
+        str: "test"
     };
 
-    quote::quote! {#st};
+    let result = quote::quote! {#st};
+
+    println!("{}", result);
 }
