@@ -3,7 +3,7 @@ Iroha is a tokenization Library for Rust.
 
 ## Usage
 Iroha provide derive macro `iroha::ToTokens`.
-Derived struct or enum will be implemented `qoute::ToTokens`.
+Derived struct or enum will be implemented `quote::ToTokens`.
 
 ```rust
 use iroha::ToTokens;
@@ -33,7 +33,7 @@ fn some_fn() -> TokenStream {
 ```
 
 ## Supported Type 
-* Any types witch implemented `qoute::ToTokens`
+* Any types witch implemented `quote::ToTokens`
 * `String`
 * `Vec`, `HashMap`, `HashSet`
 * `Result`, `Option`
