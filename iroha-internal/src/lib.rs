@@ -26,6 +26,7 @@ pub fn get_wrapped_value(ty: &Type, value_path: TokenStream, as_ref: bool, clone
         match last_segment.ident.to_string().as_str() {
             "Vec" => TokenizableVec::<String>::convert_token_stream(args, &value_path),
             "HashMap" => TokenizableHashMap::<String, String>::convert_token_stream(args, &value_path),
+            "HashSet" => TokenizableHashSet::<String>::convert_token_stream(args, &value_path),
             "String" => TokenizableString::convert_token_stream(args, &value_path),
             "Option" => TokenizableOption::<String>::convert_token_stream(args, &value_path),
             "Result" => TokenizableResult::<String, TokenizableError>::convert_token_stream(args, &value_path),
@@ -47,6 +48,7 @@ pub fn get_wrapper(ty: &Type) -> TokenStream {
         match last_segment.ident.to_string().as_str() {
             "Vec" => Some(TokenizableVec::<String>::type_name(arguments)),
             "HashMap" => Some(TokenizableHashMap::<String, String>::type_name(arguments)),
+            "HashSet" => Some(TokenizableHashSet::<String>::type_name(arguments)),
             "String" => Some(TokenizableString::type_name(arguments)),
             "Result" =>Some(TokenizableResult::<String, TokenizableError>::type_name(arguments)),
             "Option" => Some(TokenizableOption::<String>::type_name(arguments)),

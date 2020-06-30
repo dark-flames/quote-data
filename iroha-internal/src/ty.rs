@@ -1,9 +1,9 @@
 use proc_macro2::TokenStream;
 use quote::{ToTokens, TokenStreamExt};
 use syn::{AngleBracketedGenericArguments, Error, PathArguments};
-use crate::{get_wrapped_value, get_wrapper};
+use crate::{get_wrapped_value};
 use std::clone::Clone;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 use crate::helper::get_nested_types;
 
@@ -58,11 +58,11 @@ impl<T: ToTokens + Clone> Tokenizable for TokenizableVec<T> {
         let wrapped_value = get_wrapped_value(nested_type, quote::quote! {
             item
         }, false, true)?;
-        let wrapped_type = get_wrapper(nested_type);
+
         Ok(quote::quote! {
             iroha::TokenizableVec::from_value(#value_path.iter().map(
                 |item| #wrapped_value
-            ).collect::<Vec<#wrapped_type>>())
+            ).collect())
         })
     }
 }
@@ -79,7 +79,7 @@ impl<T: ToTokens + Clone> ToTokens for TokenizableVec<T> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq, Hash)]
 pub struct TokenizableString(pub String);
 
 impl Tokenizable for TokenizableString {
@@ -126,7 +126,7 @@ impl ToTokens for TokenizableString {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq, Hash)]
 pub struct TokenizableOption<T: ToTokens + Clone>(pub Option<T>);
 
 impl <T: ToTokens + Clone> Tokenizable for TokenizableOption<T> {
@@ -183,15 +183,17 @@ impl<T: ToTokens + Clone> ToTokens for TokenizableOption<T> {
     }
 }
 
+#[derive(Clone, Eq, PartialEq, Hash)]
 pub struct TokenizableResult<
     T: ToTokens + Clone,
     E: ToTokens + Clone + std::error::Error
 >(pub Result<T, E>);
 
-impl <
-    T: ToTokens + Clone,
-    E: ToTokens + Clone + std::error::Error
-> Tokenizable for TokenizableResult<T, E> {
+impl <T, E> Tokenizable for TokenizableResult<T, E>
+    where
+        T: ToTokens + Clone,
+        E: ToTokens + Clone + std::error::Error
+{
     type ValueType = Result<T, E>;
 
     fn type_name(argument: &PathArguments) -> TokenStream {
@@ -248,10 +250,11 @@ impl <
     }
 }
 
-impl<
-    T: ToTokens + Clone,
-    E: ToTokens + Clone + std::error::Error
-> ToTokens for TokenizableResult<T, E> {
+impl<T, E> ToTokens for TokenizableResult<T, E>
+    where
+        T: ToTokens + Clone,
+        E: ToTokens + Clone + std::error::Error
+{
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let value = self.value_token_stream();
         tokens.append(proc_macro2::Group::new(
@@ -330,10 +333,72 @@ impl<K, V> Tokenizable for TokenizableHashMap<K, V>
     }
 }
 
-impl<
-    K: Eq + Hash + Clone + ToTokens,
-    V: Clone + ToTokens
-> ToTokens for TokenizableHashMap<K, V> {
+impl<K, V> ToTokens for TokenizableHashMap<K, V>
+    where
+        K: Eq + Hash + Clone + ToTokens,
+        V: Clone + ToTokens
+{
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let value = self.value_token_stream();
+        tokens.append(proc_macro2::Group::new(
+            proc_macro2::Delimiter::Brace,
+            quote::quote! {
+                #value
+            }
+        ))
+    }
+}
+
+pub struct TokenizableHashSet<T: ToTokens + Clone + Eq + Hash>(pub HashSet<T>);
+
+impl<T> Tokenizable for TokenizableHashSet<T>
+    where
+        T: ToTokens + Clone + Eq + Hash
+{
+    type ValueType = Vec<T>;
+
+    fn type_name(argument: &PathArguments) -> TokenStream {
+        quote::quote! {
+            iroha::TokenizableHashSet#argument
+        }
+    }
+
+    fn value_token_stream(&self) -> TokenStream {
+        let items = self.0.iter();
+        quote::quote! {
+            vec![#(#items),*].into_iter().collect()
+        }
+    }
+
+    fn from_value(value: Self::ValueType) -> Self {
+        TokenizableHashSet(value.into_iter().collect())
+    }
+
+    fn convert_token_stream(arguments: Option<&AngleBracketedGenericArguments>, value_path: &TokenStream) -> Result<TokenStream, Error> {
+        let nested_types = get_nested_types(arguments);
+        let nested_type = nested_types.first().ok_or_else(
+            || Error::new_spanned(
+                &arguments.unwrap(),
+                "HashSet must have one generic param at least."
+            )
+        )?;
+
+        let wrapped_value = get_wrapped_value(nested_type, quote::quote! {
+            item
+        }, false, true)?;
+
+        Ok(quote::quote! {
+            iroha::TokenizableHashSet::from_value(#value_path.iter().map(
+                |item| #wrapped_value
+            ).collect())
+        })
+    }
+}
+
+impl<T> ToTokens for TokenizableHashSet<T>
+    where
+        T: ToTokens + Clone + Eq + Hash
+{
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let value = self.value_token_stream();
         tokens.append(proc_macro2::Group::new(

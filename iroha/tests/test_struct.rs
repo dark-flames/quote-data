@@ -1,7 +1,7 @@
 use iroha::ToTokens;
 use iroha_internal::TokenizableError;
 use quote::ToTokens;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[derive(ToTokens)]
 struct TestUnit;
@@ -19,7 +19,8 @@ struct TestStruct {
     option_string: Option<String>,
     option_string_none: Option<String>,
     result: Result<String, TokenizableError>,
-    map: HashMap<usize, String>
+    map: HashMap<usize, String>,
+    hash_set: HashSet<String>
 }
 
 fn get_result<T: ToTokens>(value: T) -> String {
@@ -51,7 +52,8 @@ fn test_struct() {
         option_string: Some("iroha".to_string()),
         option_string_none: None,
         result: Ok("233".to_string()),
-        map: vec![(1, "yuikino".to_string()), (2, "yui".to_string())].into_iter().collect()
+        map: vec![(1, "yuikino".to_string()), (2, "yui".to_string())].into_iter().collect(),
+        hash_set: vec!["yuikino".to_string(), "yui".to_string(), "iroha".to_string()].into_iter().collect()
     };
 
     quote::quote! {#st};
