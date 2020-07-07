@@ -78,11 +78,12 @@ impl Variant {
             )
         ).collect();
 
-        let arguments_tokens  = match !arguments.is_empty() {
-            true => quote! {
+        let arguments_tokens  = if !arguments.is_empty() {
+            quote! {
                 (#(#arguments),*)
-            },
-            false => TokenStream::new()
+            }
+        } else {
+            TokenStream::new()
         };
 
         let mod_path_token = mod_path.as_ref().map(
