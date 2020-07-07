@@ -1,3 +1,5 @@
+extern crate proc_macro;
+
 mod helper;
 mod r#enum;
 mod r#struct;
