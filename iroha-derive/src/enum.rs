@@ -37,13 +37,9 @@ impl EnumStructure {
         Ok(quote! {
             impl quote::ToTokens for #name {
                 fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-                    use quote::TokenStreamExt;
-                    tokens.append(proc_macro2::Group::new(
-                        proc_macro2::Delimiter::Brace,
-                        match self {
+                    match self {
                             #(#variants),*
-                        },
-                    ))
+                    }.to_tokens(tokens);
                 }
             }
         })

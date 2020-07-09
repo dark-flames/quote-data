@@ -104,13 +104,10 @@ impl StructStructure {
                 fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
                     use iroha::Tokenizable;
                     #(#temp_values;)*
-                    use quote::TokenStreamExt;
-                    tokens.append(proc_macro2::Group::new(
-                        proc_macro2::Delimiter::Brace,
-                        quote::quote! {
-                            #mod_path_token#name::new(#(#construct_params),*)
-                        }
-                    ))
+
+                    (quote::quote! {
+                        #mod_path_token#name::new(#(#construct_params),*)
+                    }).to_tokens(tokens);
                 }
             }
         })

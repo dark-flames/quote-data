@@ -1,5 +1,5 @@
 use proc_macro2::TokenStream;
-use quote::{ToTokens, TokenStreamExt};
+use quote::ToTokens;
 use syn::{AngleBracketedGenericArguments, Error, PathArguments};
 use crate::{get_wrapped_value};
 use std::clone::Clone;
@@ -70,12 +70,9 @@ impl<T: ToTokens + Clone> Tokenizable for TokenizableVec<T> {
 impl<T: ToTokens + Clone> ToTokens for TokenizableVec<T> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let value = self.value_token_stream();
-        tokens.append(proc_macro2::Group::new(
-            proc_macro2::Delimiter::Brace,
-            quote::quote! {
+        (quote::quote! {
                 #value
-            }
-        ))
+        }).to_tokens(tokens)
     }
 }
 
@@ -117,12 +114,9 @@ impl Tokenizable for TokenizableString {
 impl ToTokens for TokenizableString {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let value = self.value_token_stream();
-        tokens.append(proc_macro2::Group::new(
-            proc_macro2::Delimiter::Brace,
-            quote::quote! {
+        (quote::quote! {
                 #value
-            }
-        ))
+        }).to_tokens(tokens)
     }
 }
 
@@ -174,12 +168,9 @@ impl <T: ToTokens + Clone> Tokenizable for TokenizableOption<T> {
 impl<T: ToTokens + Clone> ToTokens for TokenizableOption<T> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let value = self.value_token_stream();
-        tokens.append(proc_macro2::Group::new(
-            proc_macro2::Delimiter::Brace,
-            quote::quote! {
+        (quote::quote! {
                 #value
-            }
-        ))
+        }).to_tokens(tokens)
     }
 }
 
@@ -257,12 +248,9 @@ impl<T, E> ToTokens for TokenizableResult<T, E>
 {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let value = self.value_token_stream();
-        tokens.append(proc_macro2::Group::new(
-            proc_macro2::Delimiter::Brace,
-            quote::quote! {
+        (quote::quote! {
                 #value
-            }
-        ))
+        }).to_tokens(tokens)
     }
 }
 
@@ -340,12 +328,9 @@ impl<K, V> ToTokens for TokenizableHashMap<K, V>
 {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let value = self.value_token_stream();
-        tokens.append(proc_macro2::Group::new(
-            proc_macro2::Delimiter::Brace,
-            quote::quote! {
+        (quote::quote! {
                 #value
-            }
-        ))
+        }).to_tokens(tokens)
     }
 }
 
@@ -401,11 +386,8 @@ impl<T> ToTokens for TokenizableHashSet<T>
 {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let value = self.value_token_stream();
-        tokens.append(proc_macro2::Group::new(
-            proc_macro2::Delimiter::Brace,
-            quote::quote! {
+        (quote::quote! {
                 #value
-            }
-        ))
+        }).to_tokens(tokens)
     }
 }
