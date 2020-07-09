@@ -39,11 +39,11 @@ fn get_result<T: ToTokens>(value: T) -> String {
 #[test]
 fn test_unit() {
     let unit = TestUnit;
-    assert_eq!(get_result(&unit), "{TestUnit::new()}");
+    assert_eq!(get_result(&unit), "TestUnit::new()");
     let tuple = TestTuple(1, -1, vec![1, 2, 3]);
     assert_eq!(
         get_result(&tuple),
-        "{TestTuple::new(1i32,-1i64,{vec![1u8,2u8,3u8]})}"
+        "TestTuple::new(1i32,-1i64,vec![1u8,2u8,3u8])"
     );
 }
 
