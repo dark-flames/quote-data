@@ -5,7 +5,7 @@ pub use helper::TokenizableError;
 use syn::{Type, Error};
 use proc_macro2::TokenStream;
 use ty::*;
-use syn::export::ToTokens;
+use quote::ToTokens;
 use helper::assert_angle_args;
 
 pub fn get_wrapped_value(ty: &Type, value_path: TokenStream, as_ref: bool, clone: bool) -> Result<TokenStream, Error> {

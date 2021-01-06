@@ -1,10 +1,10 @@
 [package]
-name = "iroha"
-version = "0.1.2"
+name = "iroha-helpers"
+version = "0.1.0"
 authors = ["dark-flames <dark_flames@outlook.com>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
-description = "A tokenization Library for Rust"
+description = "Internal functions, struct for Iroha"
 repository = "https://github.com/dark-flames/Iroha"
 include = ["src/*.rs", "crates-io.md", "LICENSE-APACHE", "LICENSE-MIT"]
 readme = "crates-io.md"
@@ -13,15 +13,7 @@ readme = "crates-io.md"
 
 [dependencies]
 syn = "1.0.33"
-heck = "0.3.1"
-quote = {version = "1.0.7", optional = true}
-proc-macro2 = {version = "1.0.18", optional = true}
-iroha-derive = {version = "0.1.2", path = "../iroha-derive"}
-iroha-internal = {version = "0.1.1", path = "../iroha-internal"}
-
-
-[features]
-default = ["to-token"]
-to-token = ["quote", "proc-macro2"]
+quote = "1.0.7"
+proc-macro2 = "1.0.18"
 
 [lib]

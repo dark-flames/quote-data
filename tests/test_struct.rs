@@ -1,5 +1,5 @@
 use iroha::ToTokens;
-use iroha_internal::TokenizableError;
+use helpers::TokenizableError;
 use quote::ToTokens;
 use std::collections::{HashMap, HashSet};
 

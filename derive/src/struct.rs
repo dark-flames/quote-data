@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream;
 use syn::{DeriveInput, Error, Data, Fields, Field as SynField, Ident, Type, Index};
-use iroha_internal::get_wrapped_value;
+use helpers::get_wrapped_value;
 use super::helper::Interpolated;
 
 enum StructType {
