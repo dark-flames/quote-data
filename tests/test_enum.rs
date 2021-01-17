@@ -1,6 +1,5 @@
 use iroha::ToTokens;
 use quote::ToTokens;
-use iroha::Tokenizable;
 
 #[derive(ToTokens)]
 #[Iroha(mod_path = "test")]

@@ -45,6 +45,7 @@ impl EnumStructure {
         Ok(quote! {
             impl quote::ToTokens for #name {
                 fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+                    use iroha::Tokenizable;
                     match self {
                             #(#variants),*
                     }.to_tokens(tokens);
