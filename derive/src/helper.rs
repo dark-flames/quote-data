@@ -1,7 +1,7 @@
+use proc_macro2::{Punct, Spacing, Span, TokenStream};
+use quote::{ToTokens, TokenStreamExt};
 use std::fmt::{self, Display};
 use syn::{Ident, Path};
-use quote::{ToTokens, TokenStreamExt};
-use proc_macro2::{TokenStream, Punct, Spacing, Span};
 
 pub struct Interpolated(pub String);
 

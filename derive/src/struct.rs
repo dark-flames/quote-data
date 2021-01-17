@@ -1,12 +1,12 @@
-use proc_macro2::TokenStream;
-use syn::{DeriveInput, Error, Data, Fields, Field as SynField, Ident, Type, Index};
-use helpers::get_wrapped_value;
 use super::helper::Interpolated;
+use helpers::get_wrapped_value;
+use proc_macro2::TokenStream;
+use syn::{Data, DeriveInput, Error, Field as SynField, Fields, Ident, Index, Type};
 
 enum StructType {
     NoField,
     Tuple,
-    Struct
+    Struct,
 }
 
 impl StructType {
@@ -24,7 +24,7 @@ pub struct StructStructure {
     name: Ident,
     fields: Option<Vec<StructField>>,
     mod_path: Option<TokenStream>,
-    struct_type: StructType
+    struct_type: StructType,
 }
 
 impl StructStructure {
@@ -33,65 +33,70 @@ impl StructStructure {
 
         let data_struct = match &input.data {
             Data::Struct(data) => data,
-            _ => unreachable!()
+            _ => unreachable!(),
         };
 
         let fields = if let Fields::Unit = &data_struct.fields {
             None
         } else {
-            Some(data_struct.fields.iter().enumerate().map(
-                |(index, field)| StructField::from_ast(field, index)
-            ).collect::<Result<Vec<StructField>, Error>>()?)
+            Some(
+                data_struct
+                    .fields
+                    .iter()
+                    .enumerate()
+                    .map(|(index, field)| StructField::from_ast(field, index))
+                    .collect::<Result<Vec<StructField>, Error>>()?,
+            )
         };
 
         let struct_type = match &data_struct.fields {
             Fields::Unit => StructType::NoField,
             Fields::Unnamed(_) => StructType::Tuple,
-            Fields::Named(_) => StructType::Struct
+            Fields::Named(_) => StructType::Struct,
         };
 
         Ok(StructStructure {
             name,
             fields,
             mod_path,
-            struct_type
+            struct_type,
         })
     }
 
     pub fn get_implement(self) -> Result<TokenStream, Error> {
         let name = &self.name;
-        let (
-            field_idents,
-            fn_new_params,
-            temp_values
-        ) = match &self.fields {
+        let (field_idents, fn_new_params, temp_values) = match &self.fields {
             Some(fields_vec) => (
-                    fields_vec.iter().map(
-                        |field| field.get_temp_value_ident()
-                    ).collect::<Vec<Ident>>(),
-                    fields_vec.iter().map(
-                        |field| field.get_construct_param()
-                    ).collect::<Vec<TokenStream>>(),
-                    fields_vec.iter().map(
-                        |field| field.temp_value_token_stream()
-                    ).collect::<Result<Vec<TokenStream>, Error>>()?
-                ),
-            _ => (Vec::new(), Vec::new(), Vec::new())
+                fields_vec
+                    .iter()
+                    .map(|field| field.get_temp_value_ident())
+                    .collect::<Vec<Ident>>(),
+                fields_vec
+                    .iter()
+                    .map(|field| field.get_construct_param())
+                    .collect::<Vec<TokenStream>>(),
+                fields_vec
+                    .iter()
+                    .map(|field| field.temp_value_token_stream())
+                    .collect::<Result<Vec<TokenStream>, Error>>()?,
+            ),
+            _ => (Vec::new(), Vec::new(), Vec::new()),
         };
 
-        let params = self.struct_type.get_params(
-            quote::quote! {#(#field_idents,)*}
-        );
+        let params = self
+            .struct_type
+            .get_params(quote::quote! {#(#field_idents,)*});
 
-        let construct_params: Vec<Interpolated> = field_idents.iter().map(
-            |ident| {
-                Interpolated(ident.to_string())
-            }
-        ).collect();
+        let construct_params: Vec<Interpolated> = field_idents
+            .iter()
+            .map(|ident| Interpolated(ident.to_string()))
+            .collect();
 
-        let mod_path_token = self.mod_path.as_ref().map(
-            |path| quote::quote! {#path::}
-        ).unwrap_or_default();
+        let mod_path_token = self
+            .mod_path
+            .as_ref()
+            .map(|path| quote::quote! {#path::})
+            .unwrap_or_default();
 
         Ok(quote::quote! {
             impl #name {
@@ -115,10 +120,10 @@ impl StructStructure {
 }
 
 #[allow(dead_code)]
-struct StructField {
-    name: Option<Ident>,
+pub(crate) struct StructField {
+    ident: Option<Ident>,
     index: usize,
-    ty: Type
+    ty: Type,
 }
 
 impl StructField {
@@ -127,14 +132,28 @@ impl StructField {
         let ty = field.ty.clone();
 
         Ok(StructField {
-            name,
+            ident: name,
             index,
-            ty
+            ty,
         })
     }
 
+    pub fn name(&self) -> String {
+        self.ident.clone()
+            .map(|ident| ident.to_string())
+            .unwrap_or_else(|| self.index.to_string())
+    }
+
+    pub fn ty(&self) -> &Type {
+        &self.ty
+    }
+
+    pub fn ident(&self) -> Option<Ident> {
+        self.ident.clone()
+    }
+
     fn get_ident(&self) -> TokenStream {
-        if let Some(ident) = &self.name {
+        if let Some(ident) = &self.ident {
             quote::quote! {
                 self.#ident
             }
@@ -156,7 +175,7 @@ impl StructField {
     }
 
     pub fn get_temp_value_ident(&self) -> Ident {
-        if let Some(ident) = &self.name {
+        if let Some(ident) = &self.ident {
             ident.clone()
         } else {
             quote::format_ident!("field_{}", self.index)
