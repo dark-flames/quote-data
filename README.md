@@ -19,6 +19,7 @@ struct Foo {
 }
 
 #[derive(ToTokens)]
+#[Iroha(mod_path="path::to::mod")]
 enum Bar {
     A,
     B
