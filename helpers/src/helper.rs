@@ -3,6 +3,7 @@ use quote::ToTokens;
 use std::error::Error as StdError;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 use syn::{AngleBracketedGenericArguments, Error, GenericArgument, PathArguments, Type};
+use crate::error::IrohaError;
 
 pub fn assert_angle_args(
     arguments: &PathArguments,
@@ -10,10 +11,7 @@ pub fn assert_angle_args(
     match arguments {
         PathArguments::None => Ok(None),
         PathArguments::AngleBracketed(result) => Ok(Some(result)),
-        _ => Err(Error::new_spanned(
-            arguments,
-            "Path argument must be angle bracketed args",
-        )),
+        _ => Err(IrohaError::NotAngleBracketedArgs.into_syn_error(arguments)),
     }
 }
 

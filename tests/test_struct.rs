@@ -54,18 +54,18 @@ fn test_struct() {
         vec: vec![1, 2, 3],
         string: "iroha".to_string(),
         vec_string: vec![
-            "yuikino".to_string(),
+            "yukino".to_string(),
             "yui".to_string(),
             "iroha".to_string(),
         ],
         option_string: Some("iroha".to_string()),
         option_string_none: None,
         result: Ok("233".to_string()),
-        map: vec![(1, "yuikino".to_string()), (2, "yui".to_string())]
+        map: vec![(1, "yukino".to_string()), (2, "yui".to_string())]
             .into_iter()
             .collect(),
         hash_set: vec![
-            "yuikino".to_string(),
+            "yukino".to_string(),
             "yui".to_string(),
             "iroha".to_string(),
         ]
