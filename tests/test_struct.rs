@@ -2,6 +2,7 @@ use helpers::TokenizableError;
 use iroha::ToTokens;
 use quote::ToTokens;
 use std::collections::{HashMap, HashSet};
+use std::marker::PhantomData;
 
 #[derive(ToTokens)]
 struct TestUnit;
@@ -11,7 +12,7 @@ struct TestTuple(i32, i64, Vec<u8>);
 
 #[derive(ToTokens)]
 #[Iroha(mod_path = "test")]
-struct TestStruct {
+struct TestStruct<T: Clone, P: Clone> where T: 'static, P: ToTokens {
     basic: i32,
     vec: Vec<i64>,
     string: String,
@@ -22,7 +23,9 @@ struct TestStruct {
     map: HashMap<usize, String>,
     hash_set: HashSet<String>,
     str: &'static str,
-    pair: (String, String)
+    pair: (String, String),
+    _marker_a: PhantomData<T>,
+    _marker_b: PhantomData<P>
 }
 
 fn get_result<T: ToTokens>(value: T) -> String {
@@ -73,7 +76,9 @@ fn test_struct() {
         .into_iter()
         .collect(),
         str: "test",
-        pair: ("114".to_string(), "514".to_string())
+        pair: ("114".to_string(), "514".to_string()),
+        _marker_a: PhantomData::<u8>::default(),
+        _marker_b: PhantomData::<u8>::default()
     };
 
     let result = quote::quote! {#st};

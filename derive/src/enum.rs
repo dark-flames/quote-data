@@ -4,11 +4,13 @@ use heck::SnakeCase;
 use helpers::get_wrapped_value;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
-use syn::{Data, DeriveInput, Error, Fields, Ident, Variant as SynVariant};
+use syn::{Token, Data, DeriveInput, Error, Fields, Ident, Variant as SynVariant, Generics, GenericParam};
+use syn::punctuated::Punctuated;
 
 pub struct EnumStructure {
     name: Ident,
     variants: Vec<Variant>,
+    generics: Generics,
     mod_path: Option<TokenStream>,
 }
 
@@ -27,10 +29,13 @@ impl EnumStructure {
             .map(Variant::from_ast)
             .collect::<Result<Vec<Variant>, Error>>()?;
 
+        let generics = input.generics.clone();
+
         Ok(EnumStructure {
             name,
             variants,
-            mod_path,
+            generics,
+            mod_path
         })
     }
 
@@ -42,8 +47,29 @@ impl EnumStructure {
             .map(|variant| variant.arm_token_stream(&self.name, &self.mod_path))
             .collect::<Result<Vec<_>, _>>()?;
 
+        let generics = &self.generics.params;
+        let generics_without_bounds: Punctuated<GenericParam, Token![,]> = self.generics.params.clone()
+            .iter()
+            .map(
+                |item| {
+                    if let GenericParam::Type(param) = item {
+                        let mut new_param = param.clone();
+                        new_param.attrs = vec![];
+                        new_param.colon_token = None;
+                        new_param.bounds = Punctuated::default();
+                        new_param.eq_token = None;
+                        new_param.default = None;
+
+                        GenericParam::Type(new_param)
+                    } else {
+                        item.clone()
+                    }
+                }
+            ).collect();
+        let where_clause = &self.generics.where_clause;
+
         Ok(quote! {
-            impl quote::ToTokens for #name {
+            impl<#generics> quote::ToTokens for #name <#generics_without_bounds> #where_clause {
                 fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
                     use iroha::Tokenizable;
                     match self {

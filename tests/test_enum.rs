@@ -1,5 +1,6 @@
 use iroha::ToTokens;
 use quote::ToTokens;
+use std::marker::PhantomData;
 
 #[derive(ToTokens)]
 #[Iroha(mod_path = "test")]
@@ -17,9 +18,10 @@ enum Test2 {
 }
 
 #[derive(ToTokens)]
-enum Test3 {
+enum Test3<T> {
     A(u8, u16, String, Vec<u8>),
     B{a: u8, b: u16, c: String, d: Vec<u8>},
+    C(PhantomData<T>)
 }
 
 fn get_string<T: ToTokens>(value: T) -> String {
@@ -56,11 +58,13 @@ pub fn test_enum() {
 
 #[test]
 pub fn test_enum_with_unnamed_field() {
-    let a = get_string(Test3::A(1, 1, "test".to_string(), vec![1, 2, 3]));
+    let a = get_string(Test3::<u8>::A(1, 1, "test".to_string(), vec![1, 2, 3]));
     assert_eq!(a, "Test3::A(1u8,1u16,\"test\".to_string(),vec![1u8,2u8,3u8])");
-    let b = get_string(Test3::B{
+    let b = get_string(Test3::<u8>::B{
         a: 1, b: 1, c: "test".to_string(),
         d: vec![1, 2, 3]
     });
-    assert_eq!(b, "Test3::B{a:1u8,b:1u16,c:\"test\".to_string(),d:vec![1u8,2u8,3u8]}")
+    assert_eq!(b, "Test3::B{a:1u8,b:1u16,c:\"test\".to_string(),d:vec![1u8,2u8,3u8]}");
+    let c = get_string(Test3::<u8>::C(PhantomData::default()));
+    assert_eq!(c, "Test3::C(std::marker::PhantomData::default())");
 }

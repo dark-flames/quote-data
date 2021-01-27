@@ -41,3 +41,4 @@ fn some_fn() -> TokenStream {
 * `Vec`, `HashMap`, `HashSet`
 * `Result`, `Option`
 * `Tuple`(only support two elements)
+* `std::marker::PhantomData`

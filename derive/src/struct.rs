@@ -1,7 +1,9 @@
 use super::helper::Interpolated;
 use helpers::get_wrapped_value;
 use proc_macro2::TokenStream;
-use syn::{Data, DeriveInput, Error, Field as SynField, Fields, Ident, Index, Type};
+use syn::{Data, DeriveInput, Error, Field as SynField, Fields, Ident, Index, Type, Generics, GenericParam};
+use syn::punctuated::Punctuated;
+use syn::Token;
 
 enum StructType {
     NoField,
@@ -23,6 +25,7 @@ impl StructType {
 pub struct StructStructure {
     name: Ident,
     fields: Option<Vec<StructField>>,
+    generics: Generics,
     mod_path: Option<TokenStream>,
     struct_type: StructType,
 }
@@ -55,9 +58,12 @@ impl StructStructure {
             Fields::Named(_) => StructType::Struct,
         };
 
+        let generics = input.generics.clone();
+
         Ok(StructStructure {
             name,
             fields,
+            generics,
             mod_path,
             struct_type,
         })
@@ -98,14 +104,35 @@ impl StructStructure {
             .map(|path| quote::quote! {#path::})
             .unwrap_or_default();
 
+        let generics = &self.generics.params;
+        let generics_without_bounds: Punctuated<GenericParam, Token![,]> = self.generics.params.clone()
+            .iter()
+            .map(
+                |item| {
+                    if let GenericParam::Type(param) = item {
+                        let mut new_param = param.clone();
+                        new_param.attrs = vec![];
+                        new_param.colon_token = None;
+                        new_param.bounds = Punctuated::default();
+                        new_param.eq_token = None;
+                        new_param.default = None;
+
+                        GenericParam::Type(new_param)
+                    } else {
+                        item.clone()
+                    }
+                }
+            ).collect();
+        let where_clause = &self.generics.where_clause;
+
         Ok(quote::quote! {
-            impl #name {
+            impl<#generics> #name <#generics_without_bounds> #where_clause {
                 pub fn new(#(#fn_new_params),*) -> Self {
                     #name #params
                 }
             }
 
-            impl quote::ToTokens for #name {
+            impl<#generics> quote::ToTokens for #name <#generics_without_bounds> #where_clause {
                 fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
                     use iroha::Tokenizable;
                     #(#temp_values;)*

@@ -27,7 +27,8 @@ pub fn get_value_wrapper(ty: &Type, value_path: TokenStream, as_ref: bool, clone
         TokenizableResult::<String, TokenizableError>::convert_token_stream,
         TokenizableHashMap::<String, String>::convert_token_stream,
         TokenizableHashSet::<String>::convert_token_stream,
-        TokenizablePair::<String, String>::convert_token_stream
+        TokenizablePair::<String, String>::convert_token_stream,
+        TokenizablePhantomData::convert_token_stream
     ];
 
     let result = handlers.iter().fold(
@@ -556,6 +557,49 @@ impl <A, B> Tokenizable for TokenizablePair<A, B>
 impl <A, B> ToTokens for TokenizablePair<A, B>
     where A: ToTokens + Clone, B: ToTokens + Clone ,
 {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let value = self.value_token_stream();
+        (quote::quote! {
+                #value
+        })
+            .to_tokens(tokens)
+    }
+}
+
+#[derive(Clone)]
+pub struct TokenizablePhantomData;
+
+impl Tokenizable for TokenizablePhantomData {
+    type ValueType = ();
+
+    fn value_token_stream(&self) -> TokenStream {
+        quote::quote! {
+            std::marker::PhantomData::default()
+        }
+    }
+
+    fn from_value(_value: Self::ValueType) -> Self {
+        TokenizablePhantomData
+    }
+
+    fn convert_token_stream(ty: &Type, _value_path: &TokenStream) -> Result<Option<TokenStream>, Error> {
+        if let Type::Path(type_path) = ty {
+            let last_segment = type_path.path.segments.iter().rev().next().unwrap();
+
+            if last_segment.ident != "PhantomData" {
+                return Ok(None)
+            }
+
+            Ok(Some(quote::quote! {
+                iroha::TokenizablePhantomData::from_value(())
+            }))
+        } else {
+            Ok(None)
+        }
+    }
+}
+
+impl ToTokens for TokenizablePhantomData {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let value = self.value_token_stream();
         (quote::quote! {
