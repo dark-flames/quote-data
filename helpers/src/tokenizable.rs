@@ -26,7 +26,8 @@ pub fn get_value_wrapper(ty: &Type, value_path: TokenStream, as_ref: bool, clone
         TokenizableOption::<String>::convert_token_stream,
         TokenizableResult::<String, TokenizableError>::convert_token_stream,
         TokenizableHashMap::<String, String>::convert_token_stream,
-        TokenizableHashSet::<String>::convert_token_stream
+        TokenizableHashSet::<String>::convert_token_stream,
+        TokenizablePair::<String, String>::convert_token_stream
     ];
 
     let result = handlers.iter().fold(
@@ -487,6 +488,73 @@ impl<T> Tokenizable for TokenizableHashSet<T>
 impl<T> ToTokens for TokenizableHashSet<T>
     where
         T: ToTokens + Clone + Eq + Hash,
+{
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let value = self.value_token_stream();
+        (quote::quote! {
+                #value
+        })
+            .to_tokens(tokens)
+    }
+}
+
+#[derive(Clone)]
+pub struct TokenizablePair<A: ToTokens + Clone, B: ToTokens + Clone>(pub (A, B));
+
+impl <A, B> Tokenizable for TokenizablePair<A, B>
+    where A: ToTokens + Clone, B: ToTokens + Clone {
+    type ValueType = (A, B);
+
+    fn value_token_stream(&self) -> TokenStream {
+        let first = &self.0.0;
+        let second = &self.0.1;
+
+        quote::quote! {
+            (#first, #second)
+        }
+    }
+
+    fn from_value(value: Self::ValueType) -> Self {
+        TokenizablePair(value)
+    }
+
+    fn convert_token_stream(ty: &Type, value_path: &TokenStream) -> Result<Option<TokenStream>, Error> {
+        if let Type::Tuple(type_tuple) = ty {
+            let (first_ty, second_tye) = if type_tuple.elems.len() != 2 {
+                return Err(IrohaError::TypeParamCountError(
+                    "Pair", 2, type_tuple.elems.len()
+                ).into_syn_error(ty))
+            } else {
+                let mut iter = type_tuple.elems.iter();
+
+                (iter.next().unwrap(), iter.next().unwrap())
+            };
+
+            let first = get_value_wrapper(
+                first_ty,
+                quote::quote! {#value_path.0},
+                false,
+                true,
+            )?;
+
+            let second = get_value_wrapper(
+                second_tye,
+                quote::quote! {#value_path.1},
+                false,
+                true,
+            )?;
+
+            Ok(Some(quote::quote! {
+                iroha::TokenizablePair::from_value((#first, #second))
+            }))
+        } else {
+            Ok(None)
+        }
+    }
+}
+
+impl <A, B> ToTokens for TokenizablePair<A, B>
+    where A: ToTokens + Clone, B: ToTokens + Clone ,
 {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let value = self.value_token_stream();

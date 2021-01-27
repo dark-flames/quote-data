@@ -21,13 +21,13 @@ struct Foo {
 #[derive(ToTokens)]
 #[Iroha(mod_path="path::to::mod")]
 enum Bar {
-    A,
+    A(u8, String),
     B
 }
 
 fn some_fn() -> TokenStream {
     let foo = Foo {a: 1, b: 2};
-    let bar = Bar::A;
+    let bar = Bar::A(1, "test".to_string);
 
     quote! {
         || (#foo, #bar)
@@ -40,3 +40,4 @@ fn some_fn() -> TokenStream {
 * `String`
 * `Vec`, `HashMap`, `HashSet`
 * `Result`, `Option`
+* `Tuple`(only support two elements)

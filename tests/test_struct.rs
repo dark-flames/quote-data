@@ -22,6 +22,7 @@ struct TestStruct {
     map: HashMap<usize, String>,
     hash_set: HashSet<String>,
     str: &'static str,
+    pair: (String, String)
 }
 
 fn get_result<T: ToTokens>(value: T) -> String {
@@ -72,6 +73,7 @@ fn test_struct() {
         .into_iter()
         .collect(),
         str: "test",
+        pair: ("114".to_string(), "514".to_string())
     };
 
     let result = quote::quote! {#st};
