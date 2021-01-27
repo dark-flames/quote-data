@@ -1,6 +1,6 @@
 [package]
 name = "iroha-codegen"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["dark-flames <dark_flames@outlook.com>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
@@ -16,7 +16,7 @@ syn = "1.0.33"
 heck = "0.3.1"
 quote = "1.0.7"
 proc-macro2 = "1.0.18"
-helpers = { package = "iroha-helpers", version = "0.1.0", path = "../helpers" }
+helpers = { package = "iroha-helpers", version = "0.1.1", path = "../helpers" }
 
 [lib]
 proc-macro=true
