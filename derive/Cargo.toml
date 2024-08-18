@@ -1,10 +1,10 @@
 [package]
-name = "iroha-codegen"
-version = "0.1.4"
+name = "quote-it-codegen"
+version = "1.0.0"
 authors = ["dark-flames <dark_flames@outlook.com>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
-description = "Internal codegen for Iroha"
+description = "Internal codegen for quote-it"
 repository = "https://github.com/dark-flames/Iroha"
 include = ["src/*.rs", "crates-io.md", "LICENSE-APACHE", "LICENSE-MIT"]
 readme = "crates-io.md"
@@ -16,7 +16,7 @@ syn = "1.0.33"
 heck = "0.3.1"
 quote = "1.0.7"
 proc-macro2 = "1.0.18"
-helpers = { package = "iroha-helpers", version = "0.1.2", path = "../helpers" }
+helpers = { package = "quote-it-helpers", version = "1.0.0", path = "../helpers" }
 
 [lib]
 proc-macro=true

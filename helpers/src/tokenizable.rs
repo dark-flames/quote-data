@@ -2,7 +2,7 @@ use quote::ToTokens;
 use syn::{Type, Error};
 use proc_macro2::TokenStream;
 use crate::helper::{assert_angle_args, get_nested_types};
-use crate::error::IrohaError;
+use crate::error::QuoteItError;
 use std::hash::Hash;
 use std::collections::{HashMap, HashSet};
 use crate::TokenizableError;
@@ -31,13 +31,13 @@ pub fn get_value_wrapper(ty: &Type, value_path: TokenStream, as_ref: bool, clone
         TokenizablePhantomData::convert_token_stream
     ];
 
-    let result = handlers.iter().fold(
-        Ok(None),
+    let result = handlers.iter().try_fold(
+        None,
         |prev, handler| {
-            if let Ok(None) = prev {
+            if prev.is_none() {
                 handler(ty, &value_path)
             } else {
-                prev
+                Ok(prev)
             }
         }
     )?;
@@ -83,7 +83,7 @@ impl<T: ToTokens + Clone> Tokenizable for TokenizableVec<T> {
         value_path: &TokenStream,
     ) -> Result<Option<TokenStream>, Error> {
         if let Type::Path(type_path) = ty {
-            let last_segment = type_path.path.segments.iter().rev().next().unwrap();
+            let last_segment = type_path.path.segments.last().unwrap();
 
             if last_segment.ident != "Vec" {
                 return Ok(None)
@@ -93,7 +93,7 @@ impl<T: ToTokens + Clone> Tokenizable for TokenizableVec<T> {
             let nested_types = get_nested_types(arguments);
             let nested_type = match nested_types.first() {
                 Some(r) => r,
-                None => return Err(IrohaError::TypeParamCountError("Vec", 1, 0).into_syn_error(ty))
+                None => return Err(QuoteItError::TypeParamCountError("Vec", 1, 0).into_syn_error(ty))
             };
 
             let wrapped_value = get_value_wrapper(
@@ -106,7 +106,7 @@ impl<T: ToTokens + Clone> Tokenizable for TokenizableVec<T> {
             )?;
 
             Ok(Some(quote::quote! {
-                iroha::TokenizableVec::from_value(#value_path.iter().map(
+                quote_it::TokenizableVec::from_value(#value_path.iter().map(
                     |item| #wrapped_value
                 ).collect())
             }))
@@ -147,14 +147,14 @@ impl Tokenizable for TokenizableString {
         value_path: &TokenStream,
     ) -> Result<Option<TokenStream>, Error> {
         if let Type::Path(type_path) = ty {
-            let last_segment = type_path.path.segments.iter().rev().next().unwrap();
+            let last_segment = type_path.path.segments.last().unwrap();
 
             if last_segment.ident != "String" {
                 return Ok(None)
             }
 
             Ok(Some(quote::quote! {
-                iroha::TokenizableString::from_value(#value_path.clone())
+                quote_it::TokenizableString::from_value(#value_path.clone())
             }))
         } else {
             Ok(None)
@@ -197,7 +197,7 @@ impl<T: ToTokens + Clone> Tokenizable for TokenizableOption<T> {
         value_path: &TokenStream,
     ) -> Result<Option<TokenStream>, Error> {
         if let Type::Path(type_path) = ty {
-            let last_segment = type_path.path.segments.iter().rev().next().unwrap();
+            let last_segment = type_path.path.segments.last().unwrap();
 
             if last_segment.ident != "Option" {
                 return Ok(None)
@@ -207,7 +207,7 @@ impl<T: ToTokens + Clone> Tokenizable for TokenizableOption<T> {
             let nested_types = get_nested_types(arguments);
             let nested_type = match nested_types.first() {
                 Some(r) => r,
-                None => return Err(IrohaError::TypeParamCountError("Option", 1, 0).into_syn_error(ty))
+                None => return Err(QuoteItError::TypeParamCountError("Option", 1, 0).into_syn_error(ty))
             };
 
             let wrapped_value = get_value_wrapper(
@@ -220,7 +220,7 @@ impl<T: ToTokens + Clone> Tokenizable for TokenizableOption<T> {
             )?;
 
             Ok(Some(quote::quote! {
-                iroha::TokenizableOption::from_value(#value_path.as_ref().map(|option_value| #wrapped_value))
+                quote_it::TokenizableOption::from_value(#value_path.as_ref().map(|option_value| #wrapped_value))
             }))
         } else {
             Ok(None)
@@ -269,7 +269,7 @@ impl<T, E> Tokenizable for TokenizableResult<T, E>
         value_path: &TokenStream,
     ) -> Result<Option<TokenStream>, Error> {
         if let Type::Path(type_path) = ty {
-            let last_segment = type_path.path.segments.iter().rev().next().unwrap();
+            let last_segment = type_path.path.segments.last().unwrap();
 
             if last_segment.ident != "Result" {
                 return Ok(None)
@@ -278,12 +278,12 @@ impl<T, E> Tokenizable for TokenizableResult<T, E>
             let arguments = assert_angle_args(&last_segment.arguments)?;
             let nested_types = get_nested_types(arguments);
 
-            let first_param = nested_types.get(0).ok_or_else(|| {
-                IrohaError::TypeParamCountError("Result", 2, 0).into_syn_error(ty)
+            let first_param = nested_types.first().ok_or_else(|| {
+                QuoteItError::TypeParamCountError("Result", 2, 0).into_syn_error(ty)
             })?;
 
             let second_param = nested_types.get(1).ok_or_else(|| {
-                IrohaError::TypeParamCountError("Result", 2, 1).into_syn_error(ty)
+                QuoteItError::TypeParamCountError("Result", 2, 1).into_syn_error(ty)
             })?;
 
             let first_wrapped_value = get_value_wrapper(
@@ -305,7 +305,7 @@ impl<T, E> Tokenizable for TokenizableResult<T, E>
             )?;
 
             Ok(Some(quote::quote! {
-                iroha::TokenizableResult::from_value(
+                quote_it::TokenizableResult::from_value(
                     #value_path.clone()
                     .map(|result| #first_wrapped_value)
                     .map_err(|error| #second_wrapped_value)
@@ -367,7 +367,7 @@ impl<K, V> Tokenizable for TokenizableHashMap<K, V>
         value_path: &TokenStream,
     ) -> Result<Option<TokenStream>, Error> {
         if let Type::Path(type_path) = ty {
-            let last_segment = type_path.path.segments.iter().rev().next().unwrap();
+            let last_segment = type_path.path.segments.last().unwrap();
 
             if last_segment.ident != "HashMap" {
                 return Ok(None)
@@ -376,12 +376,12 @@ impl<K, V> Tokenizable for TokenizableHashMap<K, V>
             let arguments = assert_angle_args(&last_segment.arguments)?;
             let nested_types = get_nested_types(arguments);
 
-            let first_param = nested_types.get(0).ok_or_else(|| {
-                IrohaError::TypeParamCountError("HashMap", 2, 0).into_syn_error(ty)
+            let first_param = nested_types.first().ok_or_else(|| {
+                QuoteItError::TypeParamCountError("HashMap", 2, 0).into_syn_error(ty)
             })?;
 
             let second_param = nested_types.get(1).ok_or_else(|| {
-                IrohaError::TypeParamCountError("HashMap", 2, 1).into_syn_error(ty)
+                QuoteItError::TypeParamCountError("HashMap", 2, 1).into_syn_error(ty)
             })?;
 
             let first_wrapped_value = get_value_wrapper(
@@ -403,7 +403,7 @@ impl<K, V> Tokenizable for TokenizableHashMap<K, V>
             )?;
 
             Ok(Some(quote::quote! {
-                iroha::TokenizableHashMap::from_value(
+                quote_it::TokenizableHashMap::from_value(
                     #value_path.iter().map(
                         |(key, value)| (#first_wrapped_value, #second_wrapped_value)
                     ).collect()
@@ -454,7 +454,7 @@ impl<T> Tokenizable for TokenizableHashSet<T>
         value_path: &TokenStream,
     ) -> Result<Option<TokenStream>, Error> {
         if let Type::Path(type_path) = ty {
-            let last_segment = type_path.path.segments.iter().rev().next().unwrap();
+            let last_segment = type_path.path.segments.last().unwrap();
 
             if last_segment.ident != "HashSet" {
                 return Ok(None)
@@ -463,7 +463,7 @@ impl<T> Tokenizable for TokenizableHashSet<T>
             let arguments = assert_angle_args(&last_segment.arguments)?;
             let nested_types = get_nested_types(arguments);
             let nested_type = nested_types.first().ok_or_else(|| {
-                IrohaError::TypeParamCountError("HashSet", 1, 0).into_syn_error(ty)
+                QuoteItError::TypeParamCountError("HashSet", 1, 0).into_syn_error(ty)
             })?;
 
             let wrapped_value = get_value_wrapper(
@@ -476,7 +476,7 @@ impl<T> Tokenizable for TokenizableHashSet<T>
             )?;
 
             Ok(Some(quote::quote! {
-                iroha::TokenizableHashSet::from_value(#value_path.iter().map(
+                quote_it::TokenizableHashSet::from_value(#value_path.iter().map(
                     |item| #wrapped_value
                 ).collect())
             }))
@@ -522,7 +522,7 @@ impl <A, B> Tokenizable for TokenizablePair<A, B>
     fn convert_token_stream(ty: &Type, value_path: &TokenStream) -> Result<Option<TokenStream>, Error> {
         if let Type::Tuple(type_tuple) = ty {
             let (first_ty, second_tye) = if type_tuple.elems.len() != 2 {
-                return Err(IrohaError::TypeParamCountError(
+                return Err(QuoteItError::TypeParamCountError(
                     "Pair", 2, type_tuple.elems.len()
                 ).into_syn_error(ty))
             } else {
@@ -546,7 +546,7 @@ impl <A, B> Tokenizable for TokenizablePair<A, B>
             )?;
 
             Ok(Some(quote::quote! {
-                iroha::TokenizablePair::from_value((#first, #second))
+                quote_it::TokenizablePair::from_value((#first, #second))
             }))
         } else {
             Ok(None)
@@ -584,14 +584,14 @@ impl Tokenizable for TokenizablePhantomData {
 
     fn convert_token_stream(ty: &Type, _value_path: &TokenStream) -> Result<Option<TokenStream>, Error> {
         if let Type::Path(type_path) = ty {
-            let last_segment = type_path.path.segments.iter().rev().next().unwrap();
+            let last_segment = type_path.path.segments.last().unwrap();
 
             if last_segment.ident != "PhantomData" {
                 return Ok(None)
             }
 
             Ok(Some(quote::quote! {
-                iroha::TokenizablePhantomData::from_value(())
+                quote_it::TokenizablePhantomData::from_value(())
             }))
         } else {
             Ok(None)

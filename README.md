@@ -1,14 +1,12 @@
-# Iroha
-Iroha is a tokenization Library for Rust.
-
-# 
+# quote-it
+A tokenization Library for Rust.
 
 ## Usage
-Iroha provide derive macro `iroha::ToTokens`.
-Derived struct or enum will be implemented `quote::ToTokens`.
+`quote-it` provide derive macro `quote_it::QuoteIt`, 
+which implements `quote::ToTokens` for struct or enum.
 
 ```rust
-use iroha::ToTokens;
+use quote_it::ToTokens;
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -18,8 +16,8 @@ struct Foo {
     b: i64
 }
 
-#[derive(ToTokens)]
-#[Iroha(mod_path="path::to::mod")]
+#[derive(QuoteIt)]
+#[mod_path="path::to::mod"]
 enum Bar {
     A(u8, String),
     B
@@ -35,10 +33,10 @@ fn some_fn() -> TokenStream {
 }
 ```
 
-## Supported Type 
-* Any types witch implemented `quote::ToTokens`
+## Supported Types
+* Any types implemented `quote::ToTokens`
 * `String`
 * `Vec`, `HashMap`, `HashSet`
 * `Result`, `Option`
-* `Tuple`(only support two elements)
+* `Tuple`
 * `std::marker::PhantomData`

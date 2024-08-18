@@ -134,7 +134,7 @@ impl StructStructure {
 
             impl<#generics> quote::ToTokens for #name <#generics_without_bounds> #where_clause {
                 fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-                    use iroha::Tokenizable;
+                    use quote_it::Tokenizable;
                     #(#temp_values;)*
 
                     (quote::quote! {

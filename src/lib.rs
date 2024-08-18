@@ -1,3 +1,3 @@
 pub use helpers::*;
 
-pub use derive::ToTokens;
+pub use derive::QuoteIt;

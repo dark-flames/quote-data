@@ -51,5 +51,4 @@ impl Display for Symbol {
     }
 }
 
-pub const IROHA: Symbol = Symbol("Iroha");
 pub const MOD_PATH: Symbol = Symbol("mod_path");

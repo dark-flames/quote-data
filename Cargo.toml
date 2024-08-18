@@ -1,6 +1,6 @@
 [package]
-name = "iroha"
-version = "0.1.7"
+name = "quote-it"
+version = "1.0.0"
 authors = ["dark-flames <dark_flames@outlook.com>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
@@ -24,8 +24,8 @@ syn = "1.0.33"
 heck = "0.3.1"
 quote = {version = "1.0.7", optional = true}
 proc-macro2 = {version = "1.0.18", optional = true}
-derive = { package = "iroha-codegen", version = "0.1.4", path = "derive" }
-helpers = { package = "iroha-helpers", version = "0.1.2", path = "helpers" }
+derive = { package = "quote-it-codegen", version = "1.0.0", path = "derive" }
+helpers = { package = "quote-it-helpers", version = "1.0.0", path = "helpers" }
 
 
 [features]

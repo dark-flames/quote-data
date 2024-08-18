@@ -1,23 +1,23 @@
-use iroha::ToTokens;
+use quote_it::QuoteIt;
 use quote::ToTokens;
 use std::marker::PhantomData;
 
-#[derive(ToTokens)]
-#[Iroha(mod_path = "test")]
+#[derive(QuoteIt)]
+#[mod_path = "test"]
 enum Test {
     A,
     B,
     C,
 }
 
-#[derive(ToTokens)]
+#[derive(QuoteIt)]
 enum Test2 {
     A,
     B,
     C,
 }
 
-#[derive(ToTokens)]
+#[derive(QuoteIt)]
 enum Test3<T> {
     A(u8, u16, String, Vec<u8>),
     B{a: u8, b: u16, c: String, d: Vec<u8>},

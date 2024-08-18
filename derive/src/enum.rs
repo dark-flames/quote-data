@@ -71,7 +71,7 @@ impl EnumStructure {
         Ok(quote! {
             impl<#generics> quote::ToTokens for #name <#generics_without_bounds> #where_clause {
                 fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-                    use iroha::Tokenizable;
+                    use quote_it::Tokenizable;
                     match self {
                             #(#variants),*
                     }.to_tokens(tokens);
@@ -90,11 +90,7 @@ struct Variant {
 impl Variant {
     pub fn from_ast(variant: &SynVariant) -> Result<Self, Error> {
         let name = variant.ident.clone();
-        let named = if let Fields::Named(_) = variant.fields {
-            true
-        } else {
-            false
-        };
+        let named = matches!(variant.fields, Fields::Named(_));
         let fields = variant
             .fields
             .iter()
