@@ -1,16 +1,16 @@
-# quote-it
+# quote-data
 A tokenization Library for Rust.
 
 ## Usage
-`quote-it` provide derive macro `quote_it::QuoteIt`, 
+`quote-data` provide derive macro `quote_data::QuoteIt`, 
 which implements `quote::ToTokens` for struct or enum.
 
 ```rust
-use quote_it::ToTokens;
+use quote_data::QuoteIt;
 use proc_macro2::TokenStream;
 use quote::quote;
 
-#[derive(ToTokens)]
+#[derive(QuoteIt)]
 struct Foo {
     a: i32,
     b: i64

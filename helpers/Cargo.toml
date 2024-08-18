@@ -1,5 +1,5 @@
 [package]
-name = "quote-it-helpers"
+name = "quote-data-helpers"
 version = "1.0.0"
 authors = ["dark-flames <dark_flames@outlook.com>"]
 edition = "2018"

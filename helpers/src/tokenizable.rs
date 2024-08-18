@@ -106,7 +106,7 @@ impl<T: ToTokens + Clone> Tokenizable for TokenizableVec<T> {
             )?;
 
             Ok(Some(quote::quote! {
-                quote_it::TokenizableVec::from_value(#value_path.iter().map(
+                quote_data::TokenizableVec::from_value(#value_path.iter().map(
                     |item| #wrapped_value
                 ).collect())
             }))
@@ -154,7 +154,7 @@ impl Tokenizable for TokenizableString {
             }
 
             Ok(Some(quote::quote! {
-                quote_it::TokenizableString::from_value(#value_path.clone())
+                quote_data::TokenizableString::from_value(#value_path.clone())
             }))
         } else {
             Ok(None)
@@ -220,7 +220,7 @@ impl<T: ToTokens + Clone> Tokenizable for TokenizableOption<T> {
             )?;
 
             Ok(Some(quote::quote! {
-                quote_it::TokenizableOption::from_value(#value_path.as_ref().map(|option_value| #wrapped_value))
+                quote_data::TokenizableOption::from_value(#value_path.as_ref().map(|option_value| #wrapped_value))
             }))
         } else {
             Ok(None)
@@ -305,7 +305,7 @@ impl<T, E> Tokenizable for TokenizableResult<T, E>
             )?;
 
             Ok(Some(quote::quote! {
-                quote_it::TokenizableResult::from_value(
+                quote_data::TokenizableResult::from_value(
                     #value_path.clone()
                     .map(|result| #first_wrapped_value)
                     .map_err(|error| #second_wrapped_value)
@@ -403,7 +403,7 @@ impl<K, V> Tokenizable for TokenizableHashMap<K, V>
             )?;
 
             Ok(Some(quote::quote! {
-                quote_it::TokenizableHashMap::from_value(
+                quote_data::TokenizableHashMap::from_value(
                     #value_path.iter().map(
                         |(key, value)| (#first_wrapped_value, #second_wrapped_value)
                     ).collect()
@@ -476,7 +476,7 @@ impl<T> Tokenizable for TokenizableHashSet<T>
             )?;
 
             Ok(Some(quote::quote! {
-                quote_it::TokenizableHashSet::from_value(#value_path.iter().map(
+                quote_data::TokenizableHashSet::from_value(#value_path.iter().map(
                     |item| #wrapped_value
                 ).collect())
             }))
@@ -546,7 +546,7 @@ impl <A, B> Tokenizable for TokenizablePair<A, B>
             )?;
 
             Ok(Some(quote::quote! {
-                quote_it::TokenizablePair::from_value((#first, #second))
+                quote_data::TokenizablePair::from_value((#first, #second))
             }))
         } else {
             Ok(None)
@@ -591,7 +591,7 @@ impl Tokenizable for TokenizablePhantomData {
             }
 
             Ok(Some(quote::quote! {
-                quote_it::TokenizablePhantomData::from_value(())
+                quote_data::TokenizablePhantomData::from_value(())
             }))
         } else {
             Ok(None)

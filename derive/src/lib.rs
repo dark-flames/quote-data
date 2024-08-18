@@ -25,19 +25,19 @@ pub fn derive_to_tokens(input: TokenStream) -> TokenStream {
                         Expr::Lit(path_lit) => match &path_lit.lit {
                             Lit::Str(path_str) => Ok(path_str.value()),
                             _ => Err(Error::new_spanned(
-                                &mod_path,
+                                mod_path,
                                 "`mod_path` must be a string",
                             ))
                         },
                         _ => Err(Error::new_spanned(
-                            &mod_path,
+                            mod_path,
                             "`mod_path` must be a string",
                         )),
                     }
                         .map(|path| {
                             TokenStream2::from_str(path.as_str()).map_err(|_| {
                                 Error::new_spanned(
-                                    &mod_path,
+                                    mod_path,
                                     "Value of `mod_path` must be a path of mod",
                                 )
                             })

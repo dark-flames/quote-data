@@ -1,4 +1,4 @@
-use quote_it::QuoteIt;
+use quote_data::QuoteIt;
 use quote::ToTokens;
 use std::marker::PhantomData;
 

@@ -1,5 +1,5 @@
 use helpers::TokenizableError;
-use quote_it::QuoteIt;
+use quote_data::QuoteIt;
 use quote::ToTokens;
 use std::collections::{HashMap, HashSet};
 use std::marker::PhantomData;
