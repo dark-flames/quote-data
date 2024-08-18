@@ -1,6 +1,6 @@
 use crate::helper::Interpolated;
 use crate::r#struct::StructField;
-use heck::SnakeCase;
+use heck::ToSnakeCase;
 use helpers::get_wrapped_value;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};

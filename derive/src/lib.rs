@@ -10,7 +10,7 @@ use proc_macro2::TokenStream as TokenStream2;
 use r#enum::EnumStructure;
 use r#struct::StructStructure;
 use std::str::FromStr;
-use syn::{parse_macro_input, Data, DeriveInput, Error, Lit, Meta};
+use syn::{parse_macro_input, Data, DeriveInput, Error, Expr, Lit, Meta};
 
 #[proc_macro_derive(QuoteIt, attributes(mod_path))]
 pub fn derive_to_tokens(input: TokenStream) -> TokenStream {
@@ -18,11 +18,17 @@ pub fn derive_to_tokens(input: TokenStream) -> TokenStream {
     let mut mod_path_tokens: Result<Option<TokenStream2>, Error> = Ok(None);
 
     for attr in &input.attrs {
-        if attr.path == MOD_PATH {
-            match attr.parse_meta() {
-                Ok(Meta::NameValue(mod_path)) => {
-                    mod_path_tokens = match match &mod_path.lit {
-                        Lit::Str(path_str) => Ok(path_str.value()),
+        if attr.path() == MOD_PATH {
+            match &attr.meta {
+                Meta::NameValue(mod_path) => {
+                    mod_path_tokens = match match &mod_path.value {
+                        Expr::Lit(path_lit) => match &path_lit.lit {
+                            Lit::Str(path_str) => Ok(path_str.value()),
+                            _ => Err(Error::new_spanned(
+                                &mod_path,
+                                "`mod_path` must be a string",
+                            ))
+                        },
                         _ => Err(Error::new_spanned(
                             &mod_path,
                             "`mod_path` must be a string",
@@ -41,7 +47,6 @@ pub fn derive_to_tokens(input: TokenStream) -> TokenStream {
                         Err(e) => Err(e),
                     }
                 }
-                Err(e) => mod_path_tokens = Err(e),
                 _ => {
                     mod_path_tokens = Err(Error::new_spanned(
                         attr,

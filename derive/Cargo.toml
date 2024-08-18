@@ -12,10 +12,10 @@ readme = "crates-io.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-syn = "1.0.33"
-heck = "0.3.1"
-quote = "1.0.7"
-proc-macro2 = "1.0.18"
+syn = "2.0.75"
+heck = "0.5.0"
+quote = "1.0.36"
+proc-macro2 = "1.0.86"
 helpers = { package = "quote-it-helpers", version = "1.0.0", path = "../helpers" }
 
 [lib]
